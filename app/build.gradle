@@ -1,0 +1,83 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+    id 'org.jetbrains.kotlin.plugin.serialization' version "$kotlin_version"
+}
+
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    namespace "com.nibav.dialer"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.nibav.dialer"
+        minSdk 23
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+        setProperty("archivesBaseName", "dialer")
+    }
+
+    signingConfigs {
+        debug {
+            storeFile file(System.env.HOME + '/Nibav Keystore/nibav_keystore')
+            storePassword 'YaifKsSB8PEise1'
+            keyAlias 'release'
+            keyPassword 'YaifKsSB8PEise1'
+        }
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+        viewBinding true
+    }
+
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    flavorDimensions = ["variants"]
+    productFlavors {
+        core {}
+        fdroid {}
+        prepaid {}
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation 'com.github.KannangAndroid:Simple-Common:1e59383b88'
+    implementation 'com.github.tibbi:IndicatorFastScroll:4524cd0b61'
+    implementation 'me.grantland:autofittextview:0.2.1'
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1"
+}

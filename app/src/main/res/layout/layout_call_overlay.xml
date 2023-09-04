@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/overlayView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="end"
+    android:background="@drawable/overlay_curve"
+    android:layout_marginTop="20dp"
+    android:layout_marginEnd="50dp"
+    android:orientation="horizontal">
+
+    <TableRow
+        android:layout_width="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_height="wrap_content">
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/ivPhone"
+        android:layout_width="@dimen/bigger_margin"
+        android:layout_height="@dimen/bigger_margin"
+        android:layout_alignLeft="@+id/tvStatus"
+        android:layout_gravity="center"
+        android:src="@drawable/ic_call_accept"/>
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/tvStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Ringing"
+        android:gravity="center"
+        android:textStyle="bold"
+        android:layout_gravity="center"
+        android:paddingStart="10sp"
+        android:paddingEnd="10sp"
+        android:textColor="@color/white"
+        android:textSize="@dimen/normal_text_size"/>
+
+    </TableRow>
+
+</RelativeLayout>
