@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.media.MediaRecorder
+import android.os.Build
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
@@ -11,6 +12,8 @@ import android.telecom.Call
 import android.telecom.CallAudioState
 import android.telecom.InCallService
 import android.telecom.VideoProfile
+import android.util.Log
+import androidx.annotation.RequiresApi
 import com.nibav.commons.extensions.getFormattedDuration
 import com.nibav.dialer.dialogs.WindowOverLayout
 import com.nibav.dialer.extensions.*
@@ -292,27 +295,25 @@ class CallManager {
         private fun startRecording() {
             if (isCallRecorded)
                 return
-            isCallRecorded = true
 
             //Creating file
             try {
                 val nibavdir = File(
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                        .toString() + "/Nibav"
+                    Environment.getExternalStorageDirectory()
+                        .toString() + "/Download/Nibav"
                 )
                 if (!nibavdir.exists())
                     Files.createDirectory(nibavdir.toPath())
-
                 val recordingDir = File(
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                        .toString() + "/Nibav/recording"
+                    Environment.getExternalStorageDirectory()
+                        .toString() + "/Download/Nibav/recording"
                 )
 
                 if (!recordingDir.exists())
                     Files.createDirectory(recordingDir.toPath())
-
                 audiofile = File.createTempFile("sound", ".m4a", recordingDir)
             } catch (e: IOException) {
+                e.printStackTrace()
                 return
             }
             recorder = MediaRecorder()
@@ -326,6 +327,7 @@ class CallManager {
             try {
                 recorder?.prepare()
                 recorder?.start()
+                isCallRecorded = true
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -393,7 +395,7 @@ class CallManager {
             }
         }
 
-        private fun callStarted(){
+        private fun callStarted() {
             callDurationHandler.removeCallbacks(updateCallDurationTask)
             callDurationHandler.post(updateCallDurationTask)
         }

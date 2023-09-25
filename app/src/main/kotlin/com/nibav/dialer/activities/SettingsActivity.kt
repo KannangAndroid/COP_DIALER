@@ -1,37 +1,53 @@
 package com.nibav.dialer.activities
 
-import android.annotation.TargetApi
+import android.app.Dialog
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.net.toUri
 import com.nibav.commons.activities.ManageBlockedNumbersActivity
 import com.nibav.commons.dialogs.ChangeDateTimeFormatDialog
-import com.nibav.commons.dialogs.FeatureLockedDialog
 import com.nibav.commons.dialogs.RadioGroupDialog
 import com.nibav.commons.extensions.*
 import com.nibav.commons.helpers.*
 import com.nibav.commons.models.RadioItem
 import com.nibav.dialer.R
 import com.nibav.dialer.databinding.ActivitySettingsBinding
+import com.nibav.dialer.dialogs.DialogCustomLoading
 import com.nibav.dialer.dialogs.ExportCallHistoryDialog
 import com.nibav.dialer.dialogs.ManageVisibleTabsDialog
 import com.nibav.dialer.extensions.config
 import com.nibav.dialer.helpers.RecentsHelper
 import com.nibav.dialer.models.RecentCall
+import com.rmartinper.filepicker.model.DialogConfigs
+import com.rmartinper.filepicker.model.DialogConfigs.SINGLE_MODE
+import com.rmartinper.filepicker.model.DialogProperties
+import com.rmartinper.filepicker.view.FilePickerDialog
+import ezvcard.VCard
+import ezvcard.android.AndroidCustomFieldScribe
+import ezvcard.android.ContactOperations
+import ezvcard.io.text.VCardReader
+import ezvcard.util.IOUtils.closeQuietly
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers.Main
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.io.File
 import java.util.*
 import kotlin.system.exitProcess
+
 
 class SettingsActivity : SimpleActivity() {
     companion object {
         private const val CALL_HISTORY_FILE_TYPE = "application/json"
     }
 
+    private var loadingDialog: Dialog? = null
     private val binding by viewBinding(ActivitySettingsBinding::inflate)
     private val getContent = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
@@ -53,7 +69,6 @@ class SettingsActivity : SimpleActivity() {
         isMaterialActivity = true
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
-
         binding.apply {
             updateMaterialActivityViews(settingsCoordinator, settingsHolder, useTransparentNavigation = true, useTopSearchMenu = false)
             setupMaterialScrollListener(settingsNestedScrollview, settingsToolbar)
@@ -136,18 +151,13 @@ class SettingsActivity : SimpleActivity() {
     }
 
     // support for device-wise blocking came on Android 7, rely only on that
-    @TargetApi(Build.VERSION_CODES.N)
     private fun setupManageBlockedNumbers() {
         binding.apply {
-            settingsManageBlockedNumbersLabel.text = addLockedLabelIfNeeded(R.string.manage_blocked_numbers)
+            settingsManageBlockedNumbersLabel.text = getString(R.string.manage_blocked_numbers)
             settingsManageBlockedNumbersHolder.beVisibleIf(isNougatPlus())
             settingsManageBlockedNumbersHolder.setOnClickListener {
-                if (isOrWasThankYouInstalled()) {
-                    Intent(this@SettingsActivity, ManageBlockedNumbersActivity::class.java).apply {
-                        startActivity(this)
-                    }
-                } else {
-                    FeatureLockedDialog(this@SettingsActivity) { }
+                Intent(this@SettingsActivity, ManageBlockedNumbersActivity::class.java).apply {
+                    startActivity(this)
                 }
             }
         }
@@ -326,13 +336,65 @@ class SettingsActivity : SimpleActivity() {
 
     private fun setupCallsImport() {
         binding.settingsImportCallsHolder.setOnClickListener {
-            getContent.launch(CALL_HISTORY_FILE_TYPE)
+            val properties = DialogProperties(true)
+            properties.selectionMode = SINGLE_MODE
+            properties.selectionType = DialogConfigs.FILE_SELECT
+            properties.root = File(DialogConfigs.EXTERNAL_DIR)
+            properties.errorDir = File(DialogConfigs.EXTERNAL_DIR)
+            properties.offset = File(DialogConfigs.EXTERNAL_DIR)
+            properties.extensions = null
+            properties.setHiddenFilesShown(false)
+            val dialog = FilePickerDialog(this, properties)
+            dialog.setTitle("Select a File")
+            dialog.setDialogSelectionListener {
+                if (it.isNotEmpty())
+                    importCallHistory(it[0].toUri())
+            }
+            dialog.show()
         }
     }
 
+    private fun showLoadingDialog(description: String) {
+        runOnUiThread {
+            loadingDialog = DialogCustomLoading(this, description)
+            loadingDialog?.show()
+        }
+    }
+
+    private fun dismissLoadingDialog() {
+        loadingDialog?.let {
+            if (it.isShowing)
+                it.dismiss()
+        }
+    }
+
+
     private fun importCallHistory(uri: Uri) {
-        try {
-            val jsonString = contentResolver.openInputStream(uri)!!.use { inputStream ->
+        showLoadingDialog(getString(R.string.importing))
+        GlobalScope.launch(IO) {
+            try {
+                val vcardFile = File(uri.path)
+                var reader: VCardReader? = null
+                try {
+                    reader = VCardReader(vcardFile)
+                    reader.registerScribe(AndroidCustomFieldScribe())
+                    val operations = ContactOperations(this@SettingsActivity, null, null)
+
+                    //insert contacts with specific account_name and their types. For example:
+                    //both account_name=null and account_type=null if you want to insert contacts into phone
+                    //you can also pass other accounts
+                    var vcard: VCard? = null
+                    while (reader.readNext().also { vcard = it } != null) {
+                        operations.insertContact(vcard)
+                    }
+                } catch (e: java.lang.Exception) {
+                    e.printStackTrace()
+                } finally {
+                    closeQuietly(reader)
+                    toast(R.string.importing_successful)
+                }
+                dismissLoadingDialog()
+                /* val jsonString = contentResolver.openInputStream(uri)!!.use { inputStream ->
                 inputStream.bufferedReader().readText()
             }
 
@@ -345,13 +407,14 @@ class SettingsActivity : SimpleActivity() {
 
             RecentsHelper(this).restoreRecentCalls(this, objects) {
                 toast(R.string.importing_successful)
+            }*/
+            } catch (_: SerializationException) {
+                toast(R.string.invalid_file_format)
+            } catch (_: IllegalArgumentException) {
+                toast(R.string.invalid_file_format)
+            } catch (e: Exception) {
+                showErrorToast(e)
             }
-        } catch (_: SerializationException) {
-            toast(R.string.invalid_file_format)
-        } catch (_: IllegalArgumentException) {
-            toast(R.string.invalid_file_format)
-        } catch (e: Exception) {
-            showErrorToast(e)
         }
     }
 

@@ -399,6 +399,7 @@
                 android:id="@+id/settings_export_calls_holder"
                 style="@style/SettingsHolderTextViewOneLinerStyle"
                 android:layout_width="match_parent"
+                android:visibility="gone"
                 android:layout_height="wrap_content">
 
                 <com.nibav.commons.views.MyTextView

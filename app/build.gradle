@@ -16,10 +16,10 @@ android {
 
     defaultConfig {
         applicationId "com.nibav.dialer"
-        minSdk 23
+        minSdk 28
         targetSdk 34
         versionCode 1
-        versionName "1.0.0"
+        versionName "1.0.1"
         setProperty("archivesBaseName", "dialer")
     }
 
@@ -80,4 +80,7 @@ dependencies {
     implementation 'com.github.tibbi:IndicatorFastScroll:4524cd0b61'
     implementation 'me.grantland:autofittextview:0.2.1'
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1"
+    implementation 'com.karumi:dexter:6.2.3'
+    implementation 'com.github.aarsy.vcard-androidParser:vcard-androidParser:1.0.0'
+    implementation 'com.github.Ru95Gasol:File-Picker:1.0'
 }

@@ -1,5 +1,6 @@
 package com.nibav.dialer.activities
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
@@ -8,24 +9,29 @@ import android.content.res.Configuration
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.graphics.drawable.LayerDrawable
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.provider.Settings
+import android.util.Log
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.viewpager.widget.ViewPager
 import com.google.android.material.snackbar.Snackbar
+import com.karumi.dexter.Dexter
+import com.karumi.dexter.MultiplePermissionsReport
+import com.karumi.dexter.PermissionToken
+import com.karumi.dexter.listener.PermissionRequest
+import com.karumi.dexter.listener.multi.MultiplePermissionsListener
 import com.nibav.commons.dialogs.ChangeViewTypeDialog
 import com.nibav.commons.dialogs.ConfirmationDialog
 import com.nibav.commons.dialogs.PermissionRequiredDialog
 import com.nibav.commons.dialogs.RadioGroupDialog
 import com.nibav.commons.extensions.*
 import com.nibav.commons.helpers.*
-import com.nibav.commons.models.FAQItem
 import com.nibav.commons.models.RadioItem
 import com.nibav.commons.models.contacts.Contact
-import com.nibav.dialer.BuildConfig
 import com.nibav.dialer.R
 import com.nibav.dialer.adapters.ViewPagerAdapter
 import com.nibav.dialer.databinding.ActivityMainBinding
@@ -59,6 +65,9 @@ class MainActivity : SimpleActivity() {
         updateMaterialActivityViews(binding.mainCoordinator, binding.mainHolder, useTransparentNavigation = false, useTopSearchMenu = true)
 
         launchedDialer = savedInstanceState?.getBoolean(OPEN_DIAL_PAD_AT_LAUNCH) ?: false
+
+
+        extraPermission()
 
         if (isDefaultDialer()) {
             checkContactPermissions()
@@ -143,6 +152,39 @@ class MainActivity : SimpleActivity() {
         config.lastUsedViewPagerPage = binding.viewPager.currentItem
     }
 
+    private fun extraPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+            return
+        val permissions = mutableListOf(
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        )
+
+
+        Dexter.withContext(this)
+            .withPermissions(permissions)
+            .withListener(object : MultiplePermissionsListener {
+                override fun onPermissionsChecked(multiplePermissionsReport: MultiplePermissionsReport) {
+
+                    val deniedPermissions = mutableListOf<String>()
+                    for (p in multiplePermissionsReport.deniedPermissionResponses)
+                        deniedPermissions.add(p.permissionName)
+
+                    if (multiplePermissionsReport.areAllPermissionsGranted()) {
+
+                    } else {
+                        Log.d("Nibav_dialer", deniedPermissions.toString())
+                    }
+                }
+
+                override fun onPermissionRationaleShouldBeShown(
+                    list: List<PermissionRequest>,
+                    permissionToken: PermissionToken,
+                ) = Unit
+            }).check()
+    }
+
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, resultData: Intent?) {
         super.onActivityResult(requestCode, resultCode, resultData)
         // we don't really care about the result, the app can work without being the default Dialer too
@@ -181,7 +223,7 @@ class MainActivity : SimpleActivity() {
             findItem(R.id.create_new_contact).isVisible = currentFragment == getContactsFragment()
             findItem(R.id.change_view_type).isVisible = currentFragment == getFavoritesFragment()
             findItem(R.id.column_count).isVisible = currentFragment == getFavoritesFragment() && config.viewType == VIEW_TYPE_GRID
-          //  findItem(R.id.more_apps_from_us).isVisible = !resources.getBoolean(R.bool.hide_google_relations)
+            //  findItem(R.id.more_apps_from_us).isVisible = !resources.getBoolean(R.bool.hide_google_relations)
         }
     }
 
@@ -207,11 +249,11 @@ class MainActivity : SimpleActivity() {
                     R.id.create_new_contact -> launchCreateNewContactIntent()
                     R.id.sort -> showSortingDialog(showCustomSorting = getCurrentFragment() is FavoritesFragment)
                     R.id.filter -> showFilterDialog()
-                   // R.id.more_apps_from_us -> launchMoreAppsFromUsIntent()
+                    // R.id.more_apps_from_us -> launchMoreAppsFromUsIntent()
                     R.id.settings -> launchSettings()
                     R.id.change_view_type -> changeViewType()
                     R.id.column_count -> changeColumnCount()
-                   // R.id.about -> launchAbout()
+                    // R.id.about -> launchAbout()
                     else -> return@setOnMenuItemClickListener false
                 }
                 return@setOnMenuItemClickListener true

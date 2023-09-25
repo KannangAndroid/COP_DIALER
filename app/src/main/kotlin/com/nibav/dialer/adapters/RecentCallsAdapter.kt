@@ -5,6 +5,7 @@ import android.graphics.drawable.Drawable
 import android.provider.CallLog.Calls
 import android.text.SpannableString
 import android.text.TextUtils
+import android.util.Log
 import android.util.TypedValue
 import android.view.*
 import android.widget.PopupMenu
@@ -154,11 +155,7 @@ class RecentCallsAdapter(
     }
 
     private fun tryBlocking() {
-        if (activity.isOrWasThankYouInstalled()) {
             askConfirmBlock()
-        } else {
-            FeatureLockedDialog(activity) { }
-        }
     }
 
     private fun askConfirmBlock() {
@@ -260,7 +257,9 @@ class RecentCallsAdapter(
     }
 
     private fun launchContactDetailsIntent(contact: Contact?) {
+        Log.d("Nibav_dialer_view_contact","13")
         if (contact != null) {
+            Log.d("Nibav_dialer_view_contact","11")
             activity.startContactDetailsIntent(contact)
         }
     }
@@ -375,7 +374,7 @@ class RecentCallsAdapter(
                 findItem(R.id.cab_add_number).isVisible = !call.isUnknownNumber
                 findItem(R.id.cab_copy_number).isVisible = !call.isUnknownNumber
                 findItem(R.id.cab_show_call_details).isVisible = !call.isUnknownNumber
-                findItem(R.id.cab_block_number).title = activity.addLockedLabelIfNeeded(R.string.block_number)
+               // findItem(R.id.cab_block_number).title = activity.addLockedLabelIfNeeded(R.string.block_number)
                 findItem(R.id.cab_block_number).isVisible = isNougatPlus() && !call.isUnknownNumber
                 findItem(R.id.cab_remove_default_sim).isVisible = (activity.config.getCustomSIM(selectedNumber) ?: "") != "" && !call.isUnknownNumber
             }
@@ -408,7 +407,9 @@ class RecentCallsAdapter(
                     }
 
                     R.id.cab_view_details -> {
+                        Log.d("Nibav_dialer_view_contact","122")
                         executeItemMenuOperation(callId) {
+                            Log.d("Nibav_dialer_view_contact","12")
                             launchContactDetailsIntent(contact)
                         }
                     }

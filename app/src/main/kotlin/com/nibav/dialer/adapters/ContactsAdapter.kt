@@ -6,6 +6,7 @@ import android.content.pm.ShortcutInfo
 import android.graphics.drawable.Icon
 import android.net.Uri
 import android.text.TextUtils
+import android.util.Log
 import android.util.TypedValue
 import android.view.*
 import android.widget.ImageView
@@ -47,7 +48,7 @@ class ContactsAdapter(
     private val showDeleteButton: Boolean = true,
     private val enableDrag: Boolean = false,
     private val allowLongClick: Boolean = true,
-    itemClick: (Any) -> Unit
+    itemClick: (Any) -> Unit,
 ) : MyRecyclerViewAdapter(activity, recyclerView, itemClick),
     ItemTouchHelperContract, MyRecyclerView.MyZoomListener {
 
@@ -243,11 +244,7 @@ class ContactsAdapter(
     }
 
     private fun tryCreateShortcut() {
-        if (activity.isOrWasThankYouInstalled()) {
-            createShortcut()
-        } else {
-            FeatureLockedDialog(activity) { }
-        }
+        createShortcut()
     }
 
     @SuppressLint("NewApi")

@@ -8,6 +8,7 @@ import android.provider.ContactsContract
 import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
+import android.util.Log
 import com.nibav.commons.activities.BaseSimpleActivity
 import com.nibav.commons.extensions.*
 import com.nibav.commons.helpers.*
@@ -44,11 +45,13 @@ fun BaseSimpleActivity.callContactWithSim(recipient: String, useMainSIM: Boolean
 
 // handle private contacts differently, only Simple Contacts Pro can open them
 fun Activity.startContactDetailsIntent(contact: Contact) {
+    Log.d("Nibav_dialer_view_contact","1111")
     val simpleContacts = "com.nibav.contacts.pro"
     val simpleContactsDebug = "com.nibav.contacts.pro.debug"
     if (contact.rawId > 1000000 && contact.contactId > 1000000 && contact.rawId == contact.contactId &&
         (isPackageInstalled(simpleContacts) || isPackageInstalled(simpleContactsDebug))
     ) {
+        Log.d("Nibav_dialer_view_contact","1")
         Intent().apply {
             action = Intent.ACTION_VIEW
             putExtra(CONTACT_ID, contact.rawId)
@@ -62,6 +65,7 @@ fun Activity.startContactDetailsIntent(contact: Contact) {
             val lookupKey = SimpleContactsHelper(this).getContactLookupKey((contact).rawId.toString())
             val publicUri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_LOOKUP_URI, lookupKey)
             runOnUiThread {
+                Log.d("Nibav_dialer_view_contact",publicUri.path?:"")
                 launchViewContactIntent(publicUri)
             }
         }
