@@ -94,7 +94,11 @@ class RecentsFragment(context: Context, attributeSet: AttributeSet) : MyViewPage
             if (binding.recentsList.adapter == null) {
                 recentsAdapter = RecentCallsAdapter(activity as SimpleActivity, recents.toMutableList(), binding.recentsList, this, true) {
                     val recentCall = it as RecentCall
-                    if (context.config.showCallConfirmation) {
+                    if (context.config.helpLine == recentCall.phoneNumber) {
+                        CallConfirmationDialog(activity as SimpleActivity,"Nibav Helpline") {
+                            activity?.launchCallIntent(recentCall.phoneNumber)
+                        }
+                    } else if (context.config.showCallConfirmation) {
                         CallConfirmationDialog(activity as SimpleActivity, recentCall.name) {
                             activity?.launchCallIntent(recentCall.phoneNumber)
                         }

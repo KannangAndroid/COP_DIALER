@@ -295,6 +295,8 @@ class RecentCallsAdapter(
                     nameToShow = SpannableString("${name} - ${call.specificType}, ${call.specificNumber}")
                 }
             }
+            if(call.phoneNumber==activity.config.helpLine)
+                nameToShow = SpannableString("Nibav Helpline")
 
             if (call.neighbourIDs.isNotEmpty()) {
                 nameToShow = SpannableString("$nameToShow (${call.neighbourIDs.size + 1})")
