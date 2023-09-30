@@ -34,13 +34,9 @@ class CallManager {
         private var call: Call? = null
         private val calls = mutableListOf<Call>()
         private val listeners = CopyOnWriteArraySet<CallManagerListener>()
-        private var recorder: MediaRecorder? = null
-        private var audiofile: File? = null
-        private var isCallRecorded = false
         private var mContext: Context? = null
         private var callState = ""
         private var callInProgress = false
-        private var totalCallDetails: HashMap<String, JSONObject> = HashMap()
         private var windowOverLayout: WindowOverLayout? = null
         private val callDurationHandler = Handler(Looper.getMainLooper())
 
@@ -142,8 +138,7 @@ class CallManager {
         }
 
         private fun updateState() {
-            val phoneState = getPhoneState()
-            val primaryCall = when (phoneState) {
+            val primaryCall = when (val phoneState = getPhoneState()) {
                 is NoCall -> null
                 is SingleCall -> phoneState.call
                 is TwoCalls -> phoneState.active
@@ -163,63 +158,8 @@ class CallManager {
                     listener.onStateChanged()
                 }
             }
-            try {
-                if (phoneState is SingleCall) {
-                    if (call?.children?.size == 0) {
-                        if (call.getStateCompat() == Call.STATE_ACTIVE) {
-                            startRecording()
-                            updateCallDetails(call)
-                        } else if (call.getStateCompat() == Call.STATE_RINGING) {
-                            callState = "inbound"
-                        } else if (call.getStateCompat() == Call.STATE_CONNECTING || call.getStateCompat() == Call.STATE_DIALING) {
-                            callState = "outbound"
-                        } else if (call.getStateCompat() == Call.STATE_DISCONNECTED) {
-                            callInProgress = false
-                            checkCallStatus(true)
-                            updateCallDetails(call)
-                            stopRecording()
-                        }
-                    } else if ((call?.children?.size ?: 0) > 0) {
-                        call?.children?.let {
-                            it.forEach { individualCall ->
-                                //if (individualCall.getStateCompat() == Call.STATE_DISCONNECTED || individualCall.getStateCompat() == Call.STATE_ACTIVE)
-                                updateCallDetails(individualCall)
-                            }
-                        }
-                    }
-                } else if (phoneState is TwoCalls) {
-                    if ((call?.children?.size ?: 0) > 0) {
-                        call?.children?.let {
-                            it.forEach { individualCall ->
-                                //if (individualCall.getStateCompat() == Call.STATE_DISCONNECTED || individualCall.getStateCompat() == Call.STATE_ACTIVE)
-                                updateCallDetails(individualCall)
-                            }
-                        }
-                    }
-                }/*else if (phoneState is TwoCalls) {
-                    if(phoneState.onHold!=null) {
-                        secondNumber = phoneState.onHold?.details?.handle?.schemeSpecificPart ?: ""
-                        callState ="conference_hold"
-                    }
-                }*/
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-
             // remove all disconnected calls manually in case they are still here
             calls.removeAll { it.getStateCompat() == Call.STATE_DISCONNECTED }
-        }
-
-        private fun updateCallDetails(call: Call?) {
-            val obj = JSONObject()
-            val callerDisplayName = call?.details?.callerDisplayName ?: ""
-            val number = call?.details?.handle?.schemeSpecificPart ?: null
-            if (callerDisplayName.isNullOrEmpty() && number.isNullOrEmpty())
-                return
-            obj.put("number", number ?: callerDisplayName)
-            obj.put("isOutgoing", call?.isOutgoing())
-            obj.put("callDuration", call?.getCallDuration())
-            totalCallDetails[number ?: callerDisplayName] = obj
         }
 
         fun getPrimaryCall(): Call? {
@@ -291,81 +231,6 @@ class CallManager {
             }, DIALPAD_TONE_LENGTH_MS)
         }
 
-        @Throws(IOException::class)
-        private fun startRecording() {
-            if (isCallRecorded)
-                return
-
-            //Creating file
-            try {
-                val nibavdir = File(
-                    Environment.getExternalStorageDirectory()
-                        .toString() + "/Download/Nibav"
-                )
-                if (!nibavdir.exists())
-                    Files.createDirectory(nibavdir.toPath())
-                val recordingDir = File(
-                    Environment.getExternalStorageDirectory()
-                        .toString() + "/Download/Nibav/recording"
-                )
-
-                if (!recordingDir.exists())
-                    Files.createDirectory(recordingDir.toPath())
-                audiofile = File.createTempFile("sound", ".m4a", recordingDir)
-            } catch (e: IOException) {
-                e.printStackTrace()
-                return
-            }
-            recorder = MediaRecorder()
-            recorder?.reset()
-            recorder?.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL)
-            recorder?.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-            recorder?.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-            recorder?.setAudioEncodingBitRate(16)
-            recorder?.setAudioSamplingRate(44100)
-            recorder?.setOutputFile(audiofile)
-            try {
-                recorder?.prepare()
-                recorder?.start()
-                isCallRecorded = true
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-
-
-        private fun stopRecording() {
-            recorder = try {
-                recorder?.release()
-                recorder?.stop()
-                recorder?.reset()
-                null
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
-            }
-            if (isCallRecorded)
-                updateFile()
-            isCallRecorded = false
-        }
-
-        private fun updateFile() {
-            /* Log.d("NibavDialer_details", totalCallDetails.toString())
-             Log.d("NibavDialer_callState", callState)*/
-            val callArray = JSONArray()
-            totalCallDetails.forEach { (k, v) ->
-                callArray.put(v)
-            }
-            totalCallDetails.clear()
-            val intent = Intent()
-            intent.action = "com.nibav.employee.incall"
-            intent.putExtra("fileName", audiofile?.name)
-            intent.putExtra("callState", callState)
-            intent.putExtra("callDetails", callArray.toString())
-            intent.setPackage("com.nibav.employee")
-            intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
-            mContext?.sendBroadcast(intent)
-        }
 
         private fun checkCallStatus(isScreenOpen: Boolean) {
             try {

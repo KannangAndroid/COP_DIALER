@@ -18,12 +18,49 @@
         android:fillViewport="true"
         android:scrollbars="none">
 
+        <LinearLayout
+            android:id="@+id/helpLine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="@drawable/selector"
+            android:paddingTop="@dimen/medium_margin"
+            android:paddingBottom="@dimen/medium_margin"
+            android:background="?attr/selectableItemBackground"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/item_recents_image"
+                android:layout_width="@dimen/simple_list_item_height"
+                android:layout_height="@dimen/simple_list_item_height"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="@dimen/normal_margin"
+                android:layout_marginEnd="@dimen/small_margin"
+                android:src="@drawable/img_nibav_icon"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginStart="@dimen/small_margin"
+                android:maxLines="1"
+                android:text="@string/nibav_helpline"
+                android:textColor="@color/theme_solarized_text_color"
+                android:textSize="@dimen/middle_text_size" />
+        </LinearLayout>
+
         <com.nibav.commons.views.MyViewPager
             android:id="@+id/view_pager"
             android:layout_width="match_parent"
             android:layout_height="0dp"
+            android:layout_marginTop="?attr/actionBarSize"
             app:layout_constraintBottom_toTopOf="@+id/main_tabs_holder"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="@+id/helpLine" />
 
         <com.nibav.commons.views.MyFloatingActionButton
             android:id="@+id/main_dialpad_button"

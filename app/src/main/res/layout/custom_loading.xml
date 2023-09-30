@@ -10,8 +10,8 @@
 
     <ProgressBar
         style="?android:attr/progressBarStyleLarge"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="@dimen/list_avatar_size"
+        android:layout_height="@dimen/list_avatar_size"
         android:layout_gravity="center"
         android:indeterminateDrawable="@drawable/custom_progress_bg"
         android:progressDrawable="@drawable/custom_progress_bg" />
@@ -24,6 +24,6 @@
         android:paddingTop="5dp"
         android:textAppearance="?android:textAppearanceSmall"
         android:textColor="@color/black"
-        android:textSize="12dp" />
+        android:textSize="@dimen/normal_text_size" />
 </LinearLayout>
 

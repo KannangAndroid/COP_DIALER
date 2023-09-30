@@ -24,10 +24,7 @@ import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
-import com.nibav.commons.dialogs.ChangeViewTypeDialog
-import com.nibav.commons.dialogs.ConfirmationDialog
-import com.nibav.commons.dialogs.PermissionRequiredDialog
-import com.nibav.commons.dialogs.RadioGroupDialog
+import com.nibav.commons.dialogs.*
 import com.nibav.commons.extensions.*
 import com.nibav.commons.helpers.*
 import com.nibav.commons.models.RadioItem
@@ -99,6 +96,17 @@ class MainActivity : SimpleActivity() {
 
         setupTabs()
         Contact.sorting = config.sorting
+        binding.helpLine.setOnClickListener { callNibavHelpLine() }
+    }
+
+    private fun callNibavHelpLine() {
+        //if (config.showCallConfirmation) {
+        CallConfirmationDialog(this, "Nibav Helpline") {
+            launchCallIntent(config.helpLine)
+        }
+        /*} else {
+            launchCallIntent(config.helpLine)
+        }*/
     }
 
     override fun onResume() {

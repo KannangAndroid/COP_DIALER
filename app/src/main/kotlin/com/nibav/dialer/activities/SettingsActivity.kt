@@ -3,7 +3,10 @@ package com.nibav.dialer.activities
 import android.app.Dialog
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
+import android.util.Log
 import android.view.Menu
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.net.toUri
@@ -31,20 +34,19 @@ import ezvcard.android.ContactOperations
 import ezvcard.io.text.VCardReader
 import ezvcard.util.IOUtils.closeQuietly
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
-import java.util.*
+import java.util.Locale
 import kotlin.system.exitProcess
 
 
 class SettingsActivity : SimpleActivity() {
     companion object {
-        private const val CALL_HISTORY_FILE_TYPE = "application/json"
+        private const val CALL_HISTORY_FILE_TYPE = "text/x-vcard"
     }
 
     private var loadingDialog: Dialog? = null
@@ -336,22 +338,30 @@ class SettingsActivity : SimpleActivity() {
 
     private fun setupCallsImport() {
         binding.settingsImportCallsHolder.setOnClickListener {
-            val properties = DialogProperties(true)
-            properties.selectionMode = SINGLE_MODE
-            properties.selectionType = DialogConfigs.FILE_SELECT
-            properties.root = File(DialogConfigs.EXTERNAL_DIR)
-            properties.errorDir = File(DialogConfigs.EXTERNAL_DIR)
-            properties.offset = File(DialogConfigs.EXTERNAL_DIR)
-            properties.extensions = null
-            properties.setHiddenFilesShown(false)
-            val dialog = FilePickerDialog(this, properties)
-            dialog.setTitle("Select a File")
-            dialog.setDialogSelectionListener {
-                if (it.isNotEmpty())
-                    importCallHistory(it[0].toUri())
-            }
-            dialog.show()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                getContent.launch(CALL_HISTORY_FILE_TYPE)
+            else
+                loadImportDialog()
         }
+    }
+
+
+    private fun loadImportDialog() {
+        val properties = DialogProperties(true)
+        properties.selectionMode = SINGLE_MODE
+        properties.selectionType = DialogConfigs.FILE_SELECT
+        properties.root = File(DialogConfigs.EXTERNAL_DIR)
+        properties.errorDir = File(DialogConfigs.EXTERNAL_DIR)
+        properties.offset = File(DialogConfigs.EXTERNAL_DIR)
+        properties.extensions = null
+        properties.setHiddenFilesShown(false)
+        val dialog = FilePickerDialog(this, properties)
+        dialog.setTitle("Select a File")
+        dialog.setDialogSelectionListener {
+            if (it.isNotEmpty())
+                importContact(it[0].toUri())
+        }
+        dialog.show()
     }
 
     private fun showLoadingDialog(description: String) {
@@ -368,8 +378,7 @@ class SettingsActivity : SimpleActivity() {
         }
     }
 
-
-    private fun importCallHistory(uri: Uri) {
+    private fun importContact(uri: Uri) {
         showLoadingDialog(getString(R.string.importing))
         GlobalScope.launch(IO) {
             try {
@@ -393,21 +402,7 @@ class SettingsActivity : SimpleActivity() {
                     closeQuietly(reader)
                     toast(R.string.importing_successful)
                 }
-                dismissLoadingDialog()
-                /* val jsonString = contentResolver.openInputStream(uri)!!.use { inputStream ->
-                inputStream.bufferedReader().readText()
-            }
 
-            val objects = Json.decodeFromString<List<RecentCall>>(jsonString)
-
-            if (objects.isEmpty()) {
-                toast(R.string.no_entries_for_importing)
-                return
-            }
-
-            RecentsHelper(this).restoreRecentCalls(this, objects) {
-                toast(R.string.importing_successful)
-            }*/
             } catch (_: SerializationException) {
                 toast(R.string.invalid_file_format)
             } catch (_: IllegalArgumentException) {
@@ -415,6 +410,44 @@ class SettingsActivity : SimpleActivity() {
             } catch (e: Exception) {
                 showErrorToast(e)
             }
+            dismissLoadingDialog()
+        }
+    }
+
+
+    private fun importCallHistory(uri: Uri) {
+        showLoadingDialog(getString(R.string.importing))
+        GlobalScope.launch(IO) {
+            try {
+                val vcardFile = contentResolver.openInputStream(uri)
+                var reader: VCardReader? = null
+                try {
+                    reader = VCardReader(vcardFile)
+                    reader.registerScribe(AndroidCustomFieldScribe())
+                    val operations = ContactOperations(this@SettingsActivity, null, null)
+
+                    //insert contacts with specific account_name and their types. For example:
+                    //both account_name=null and account_type=null if you want to insert contacts into phone
+                    //you can also pass other accounts
+                    var vcard: VCard? = null
+                    while (reader.readNext().also { vcard = it } != null) {
+                        operations.insertContact(vcard)
+                    }
+                } catch (e: java.lang.Exception) {
+                    e.printStackTrace()
+                } finally {
+                    closeQuietly(reader)
+                    toast(R.string.importing_successful)
+                }
+
+            } catch (_: SerializationException) {
+                toast(R.string.invalid_file_format)
+            } catch (_: IllegalArgumentException) {
+                toast(R.string.invalid_file_format)
+            } catch (e: Exception) {
+                showErrorToast(e)
+            }
+            dismissLoadingDialog()
         }
     }
 

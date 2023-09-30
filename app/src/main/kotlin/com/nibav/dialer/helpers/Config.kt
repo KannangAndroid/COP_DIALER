@@ -86,21 +86,9 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getBoolean(DIALPAD_BEEPS, true)
         set(dialpadBeeps) = prefs.edit().putBoolean(DIALPAD_BEEPS, dialpadBeeps).apply()
 
-    var empCode: String
-        get() = prefs.getString(EMP_CODE, "1234") ?: "1234"
-        set(empCode) = prefs.edit().putString(EMP_CODE, empCode).apply()
-
-     var empName: String
-        get() = prefs.getString(EMP_NAME, "test") ?: "test"
-        set(empName) = prefs.edit().putString(EMP_NAME, empName).apply()
-
-     var empPhoneNumber: String
-        get() = prefs.getString(EMP_PHONE_NUMBER, "") ?: ""
-        set(empPhoneNumber) = prefs.edit().putString(EMP_PHONE_NUMBER, empPhoneNumber).apply()
-
-    var isPhoneLocked: Boolean
-        get() = prefs.getBoolean(HOME_APP_LOCK, false)
-        set(isPhoneLocked) = prefs.edit().putBoolean(HOME_APP_LOCK, isPhoneLocked).apply()
+    var helpLine: String
+        get() = prefs.getString(NIBAV_HELP_LINE, "+919003091966") ?: "+919003091966"
+        set(helpLine) = prefs.edit().putString(NIBAV_HELP_LINE, helpLine).apply()
 
     var alwaysShowFullscreen: Boolean
         get() = prefs.getBoolean(ALWAYS_SHOW_FULLSCREEN, true)

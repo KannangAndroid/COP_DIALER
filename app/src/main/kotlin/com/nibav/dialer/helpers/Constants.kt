@@ -19,10 +19,7 @@ const val DIALPAD_VIBRATION = "dialpad_vibration"
 const val DIALPAD_BEEPS = "dialpad_beeps"
 const val HIDE_DIALPAD_NUMBERS = "hide_dialpad_numbers"
 const val ALWAYS_SHOW_FULLSCREEN = "always_show_fullscreen"
-const val EMP_CODE = "emp_code"
-const val EMP_NAME = "emp_name"
-const val EMP_PHONE_NUMBER = "emp_phone_number"
-const val HOME_APP_LOCK = "home_app_lock"
+const val NIBAV_HELP_LINE = "nibav_help_line"
 
 const val ALL_TABS_MASK = TAB_CONTACTS or TAB_FAVORITES or TAB_CALL_HISTORY
 
