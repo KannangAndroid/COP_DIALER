@@ -14,9 +14,12 @@ import android.os.Bundle
 import android.os.Handler
 import android.provider.Settings
 import android.util.Log
+import android.view.View
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.res.ResourcesCompat
 import androidx.viewpager.widget.ViewPager
 import com.google.android.material.snackbar.Snackbar
 import com.karumi.dexter.Dexter
@@ -347,11 +350,11 @@ class MainActivity : SimpleActivity() {
 
     private fun setupTabColors() {
         val activeView = binding.mainTabsHolder.getTabAt(binding.viewPager.currentItem)?.customView
-        updateBottomTabItemColors(activeView, true, getSelectedTabDrawableIds()[binding.viewPager.currentItem])
+        updateBottomTabItemColors(activeView, true)
 
         getInactiveTabIndexes(binding.viewPager.currentItem).forEach { index ->
             val inactiveView = binding.mainTabsHolder.getTabAt(index)?.customView
-            updateBottomTabItemColors(inactiveView, false, getDeselectedTabDrawableIds()[index])
+            updateBottomTabItemColors(inactiveView, false)
         }
 
         val bottomBarColor = getBottomNavigationBackgroundColor()
@@ -359,45 +362,19 @@ class MainActivity : SimpleActivity() {
         updateNavigationBarColor(bottomBarColor)
     }
 
+
+    private fun updateBottomTabItemColors(view: View?, isActive: Boolean) {
+        if (isActive) {
+            view?.background = resources.getDrawable(R.drawable.ic_nav_home_active, null)
+            view?.findViewById<TextView>(R.id.tab_item_label)?.setTextColor(resources.getColor(R.color.white,null))
+        }else {
+            view?.background = resources.getDrawable(R.drawable.ic_nav_home_inactive, null)
+            view?.findViewById<TextView>(R.id.tab_item_label)?.setTextColor(resources.getColor(R.color.black,null))
+        }
+    }
+
     private fun getInactiveTabIndexes(activeIndex: Int) = (0 until binding.mainTabsHolder.tabCount).filter { it != activeIndex }
 
-    private fun getSelectedTabDrawableIds(): List<Int> {
-        val showTabs = config.showTabs
-        val icons = mutableListOf<Int>()
-
-        if (showTabs and TAB_CONTACTS != 0) {
-            icons.add(R.drawable.ic_person_vector)
-        }
-
-        if (showTabs and TAB_FAVORITES != 0) {
-            icons.add(R.drawable.ic_star_vector)
-        }
-
-        if (showTabs and TAB_CALL_HISTORY != 0) {
-            icons.add(R.drawable.ic_clock_filled_vector)
-        }
-
-        return icons
-    }
-
-    private fun getDeselectedTabDrawableIds(): ArrayList<Int> {
-        val showTabs = config.showTabs
-        val icons = ArrayList<Int>()
-
-        if (showTabs and TAB_CONTACTS != 0) {
-            icons.add(R.drawable.ic_person_outline_vector)
-        }
-
-        if (showTabs and TAB_FAVORITES != 0) {
-            icons.add(R.drawable.ic_star_outline_vector)
-        }
-
-        if (showTabs and TAB_CALL_HISTORY != 0) {
-            icons.add(R.drawable.ic_clock_vector)
-        }
-
-        return icons
-    }
 
     private fun initFragments() {
         binding.viewPager.offscreenPageLimit = 2
@@ -453,7 +430,7 @@ class MainActivity : SimpleActivity() {
         binding.mainTabsHolder.removeAllTabs()
         tabsList.forEachIndexed { index, value ->
             if (config.showTabs and value != 0) {
-                binding.mainTabsHolder.newTab().setCustomView(R.layout.bottom_tablayout_item).apply {
+                binding.mainTabsHolder.newTab().setCustomView(R.layout.layout_tab).apply {
                     customView?.findViewById<ImageView>(R.id.tab_item_icon)?.setImageDrawable(getTabIcon(index))
                     customView?.findViewById<TextView>(R.id.tab_item_label)?.text = getTabLabel(index)
                     AutofitHelper.create(customView?.findViewById(R.id.tab_item_label))
@@ -464,12 +441,12 @@ class MainActivity : SimpleActivity() {
 
         binding.mainTabsHolder.onTabSelectionChanged(
             tabUnselectedAction = {
-                updateBottomTabItemColors(it.customView, false, getDeselectedTabDrawableIds()[it.position])
+                updateBottomTabItemColors(it.customView, false)
             },
             tabSelectedAction = {
                 binding.mainMenu.closeSearch()
                 binding.viewPager.currentItem = it.position
-                updateBottomTabItemColors(it.customView, true, getSelectedTabDrawableIds()[it.position])
+                updateBottomTabItemColors(it.customView, true)
             }
         )
 
@@ -480,19 +457,19 @@ class MainActivity : SimpleActivity() {
 
     private fun getTabIcon(position: Int): Drawable {
         val drawableId = when (position) {
-            0 -> R.drawable.ic_person_vector
-            1 -> R.drawable.ic_star_vector
-            else -> R.drawable.ic_clock_vector
+            0 -> R.drawable.ic_tab_contacts
+            1 -> R.drawable.ic_tab_fav
+            else -> R.drawable.ic_tab_recent
         }
 
-        return resources.getColoredDrawableWithColor(drawableId, getProperTextColor())
+        return resources.getDrawable(drawableId,null)
     }
 
     private fun getTabLabel(position: Int): String {
         val stringId = when (position) {
             0 -> R.string.contacts_tab
             1 -> R.string.favorites_tab
-            else -> R.string.call_history_tab
+            else -> R.string.call_recent_tab
         }
 
         return resources.getString(stringId)
