@@ -100,6 +100,7 @@ class MainActivity : SimpleActivity() {
         setupTabs()
         Contact.sorting = config.sorting
         binding.helpLine.setOnClickListener { callNibavHelpLine() }
+        binding.ivHome.setOnClickListener { onBackPressed() }
     }
 
     private fun callNibavHelpLine() {
@@ -366,10 +367,10 @@ class MainActivity : SimpleActivity() {
     private fun updateBottomTabItemColors(view: View?, isActive: Boolean) {
         if (isActive) {
             view?.background = resources.getDrawable(R.drawable.ic_nav_home_active, null)
-            view?.findViewById<TextView>(R.id.tab_item_label)?.setTextColor(resources.getColor(R.color.white,null))
-        }else {
+            view?.findViewById<TextView>(R.id.tab_item_label)?.setTextColor(resources.getColor(R.color.white, null))
+        } else {
             view?.background = resources.getDrawable(R.drawable.ic_nav_home_inactive, null)
-            view?.findViewById<TextView>(R.id.tab_item_label)?.setTextColor(resources.getColor(R.color.black,null))
+            view?.findViewById<TextView>(R.id.tab_item_label)?.setTextColor(resources.getColor(R.color.black, null))
         }
     }
 
@@ -447,6 +448,11 @@ class MainActivity : SimpleActivity() {
                 binding.mainMenu.closeSearch()
                 binding.viewPager.currentItem = it.position
                 updateBottomTabItemColors(it.customView, true)
+                when (it.position) {
+                    0 -> binding.tvHeader.text = "Contacts"
+                    1 -> binding.tvHeader.text = "Favorites"
+                    2 -> binding.tvHeader.text = "Recent Contacts"
+                }
             }
         )
 
@@ -462,7 +468,7 @@ class MainActivity : SimpleActivity() {
             else -> R.drawable.ic_tab_recent
         }
 
-        return resources.getDrawable(drawableId,null)
+        return resources.getDrawable(drawableId, null)
     }
 
     private fun getTabLabel(position: Int): String {
